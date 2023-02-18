@@ -6,7 +6,7 @@
 /*   By: yokitaga <yokitaga@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/10 17:46:55 by yokitaga          #+#    #+#             */
-/*   Updated: 2023/02/16 23:23:19 by yokitaga         ###   ########.fr       */
+/*   Updated: 2023/02/18 01:38:18 by yokitaga         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,12 +14,63 @@
 
 t_node *parse(t_token *token)
 {
+    return (pipeline(&token, token));
+}
+
+t_node *pipeline(t_token **rest, t_token *token)
+{
+    t_node *node;
+
+    node = new_node(ND_PIPELINE);
+    node->inpipe[0] = STDIN_FILENO;
+    node->inpipe[1] = -1;
+    node->outpipe[0] = -1;
+    node->outpipe[1] = STDOUT_FILENO;
+    node->command = simple_command(&token, token);
+    if (equal_op(token, "|"))
+        node->next = pipeline(&token, token->next);
+    *rest = token;
+    return (node);
+}
+
+bool is_control_operator(t_token *token)
+{
+    static char *const operators[] = {"||", "&", "&&", ";", ";;", "(", ")", "|", "\n"};
+    size_t  i = 0;
+
+    while (i < sizeof(operators) / sizeof(*operators))
+    {
+        if (startswith(token->word, operators[i]))
+            return (true);
+        i++;
+    }
+    return (false);
+}
+/*
+bool is_redirect_operator(t_token *token)
+{
+    static char *const operators[] = {">", "<", ">>", "<<"};
+    size_t  i = 0;
+
+    while (i < sizeof(operators) / sizeof(*operators))
+    {
+        if (startswith(token->word, operators[i]))
+            return (true);
+        i++;
+    }
+    return (false);
+}
+*/
+
+t_node	*simple_command(t_token **rest, t_token *token)
+{
     t_node *node;
 
     node = new_node(ND_SIMPLE_CMD);
     append_command_element(node, &token, token);
-    while (token != NULL && at_eof(token) == false)
+    while (token != NULL && at_eof(token) == false && is_control_operator(token) == false)
         append_command_element(node, &token, token);
+    *rest = token;
     return(node);
 }
 

@@ -6,7 +6,7 @@
 /*   By: yokitaga <yokitaga@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/07 17:33:46 by yokitaga          #+#    #+#             */
-/*   Updated: 2023/02/16 23:19:45 by yokitaga         ###   ########.fr       */
+/*   Updated: 2023/02/17 22:32:28 by yokitaga         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@ void	free_node(t_node *node)
     free_all_token(node->delimiter);
 	free_node(node->redirects);
 	free_node(node->next);
+    free_node(node->command);
 	free(node);
 }
 

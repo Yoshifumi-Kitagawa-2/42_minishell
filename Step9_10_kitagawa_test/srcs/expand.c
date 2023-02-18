@@ -6,7 +6,7 @@
 /*   By: yokitaga <yokitaga@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/09 23:57:42 by yokitaga          #+#    #+#             */
-/*   Updated: 2023/02/16 23:20:12 by yokitaga         ###   ########.fr       */
+/*   Updated: 2023/02/17 22:32:47 by yokitaga         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,6 +85,7 @@ void	expand_quote_removal(t_node *node)
     quote_removal(node->filename);
     quote_removal(node->delimiter);
     expand_quote_removal(node->redirects);
+    expand_quote_removal(node->command);
 	expand_quote_removal(node->next);
 }
 

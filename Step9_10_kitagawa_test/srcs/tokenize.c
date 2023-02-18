@@ -6,7 +6,7 @@
 /*   By: yokitaga <yokitaga@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/07 17:33:58 by yokitaga          #+#    #+#             */
-/*   Updated: 2023/02/16 22:45:34 by yokitaga         ###   ########.fr       */
+/*   Updated: 2023/02/18 01:26:04 by yokitaga         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,34 +68,6 @@ control operator
 	  A token that performs a control function.  It is one of the following symbols:
 	  || & && ; ;; ( ) | <newline>
 */
-
-bool is_control_operator(const char *s)
-{
-    static char *const operators[] = {"||", "&", "&&", ";", ";;", "(", ")", "|", "\n"};
-    size_t  i = 0;
-
-    while (i < sizeof(operators) / sizeof(*operators))
-    {
-        if (startswith(s, operators[i]))
-            return (true);
-        i++;
-    }
-    return (false);
-}
-
-bool is_redirect_operator(const char *s)
-{
-    static char *const operators[] = {">", "<", ">>", "<<"};
-    size_t  i = 0;
-
-    while (i < sizeof(operators) / sizeof(*operators))
-    {
-        if (startswith(s, operators[i]))
-            return (true);
-        i++;
-    }
-    return (false);
-}
 
 /*
 DEFINITIONS

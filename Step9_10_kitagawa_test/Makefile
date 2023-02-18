@@ -9,7 +9,8 @@ SRCS		= srcs/main.c \
 				srcs/destructer.c \
 				srcs/parse.c \
 				srcs/expand.c \
-				srcs/redirect.c
+				srcs/redirect.c \
+				srcs/pipe.c
 
 OBJS		= $(SRCS:%.c=%.o)
 

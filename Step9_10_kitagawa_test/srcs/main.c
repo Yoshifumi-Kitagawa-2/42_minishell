@@ -6,22 +6,12 @@
 /*   By: yokitaga <yokitaga@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/06 16:17:01 by yokitaga          #+#    #+#             */
-/*   Updated: 2023/02/14 22:59:14 by yokitaga         ###   ########.fr       */
+/*   Updated: 2023/02/18 18:07:03 by yokitaga         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/step_9_10.h"
 
-/*
-メモ：char *search_path(const char *filename)関数は
-松島氏作成のdopipesの中の
-while (access(exe_path, X_OK))
-    {
-        exe_path = make_exepath((info->path)[index], (info->cmd)[info->argc - i - 1][0]);
-        index++;
-    }
-の部分をやってる
-*/
 char *search_path(const char *filename)
 {
     char path[PATH_MAX];
@@ -37,21 +27,14 @@ char *search_path(const char *filename)
 		//     ^
 		//     end
         bzero(path, PATH_MAX);
-        //":"の場所を特定
         end = strchr(value, ':');
-        if (end != NULL) //:が見つかった場合、valueからendまでの文字列をpathにコピーした
+        if (end != NULL)
             strncpy(path, value, end - value);
-        else //:が見つからなかった場合、valueをpathにコピーした
+        else
             strlcpy(path, value, PATH_MAX);
-        //「strlcat」関数を使用して、「path」に「/」と「filename」を連結しています。
-        //「strlcat」関数は、「strcat」関数と似ていますが、結合する文字列の長さが最大値を超えないように制限されます。
-        //最初の「strlcat」関数では、「/」が「path」に追加されます。
         strlcat(path, "/", PATH_MAX);
-        //次の「strlcat」関数では、「filename」が「path」に追加されます。
         strlcat(path, filename, PATH_MAX);
-        //「value」と「filename」から完全なパスを生成することを目的としている
-
-        //そうして結合したパスが実行可能なパスなのかどうかは、accessを使って判定することができます。
+        
         if (access(path, X_OK) == 0)
         {
             char *dup;
@@ -76,45 +59,69 @@ void	validate_access(const char *path, const char *filename)
 		err_exit(filename, "command not found", 127);
 }
 
-int	exec_cmd(t_node *node)
+pid_t   exec_pipeline(t_node *node)
 {
 	extern char	**environ;
     char        *path;
 	pid_t		pid;
-	int			wstatus;
     char        **argv;
 
+    if (node == NULL)
+        return (-1);
+    prepare_pipe(node);
     pid = fork();
 	if (pid < 0)
 		fatal_error("fork");
 	else if (pid == 0)
 	{
 		// child process
-        argv = token_list_to_argv(node->args);
+        prepare_pipe_child(node);
+        do_redirect(node->command->redirects);
+        argv = token_list_to_argv(node->command->args);
         path = argv[0];
         if (strchr(path, '/') == NULL)
 			path = search_path(path);
 		validate_access(path, argv[0]);
 		execve(path, argv, environ);
+        reset_redirect(node->command->redirects);
 		fatal_error("execve");
 	}
-	else
+	// parent process
+    prepare_pipe_parent(node);
+    if(node->next)
+        return (exec_pipeline(node->next));
+	return (pid);
+}
+
+int wait_pipeline(pid_t last_pid)
+{
+    pid_t	wait_result;
+	int		status;
+	int		wstatus;
+
+    while (1)
     {
-		// parent process
-		wait(&wstatus);
-		return (WEXITSTATUS(wstatus));
-	}
+        wait_result = wait(&wstatus);
+        if (wait_result == last_pid)
+			status = WEXITSTATUS(wstatus);
+        else if (wait_result < 0)
+		{
+			if (errno == ECHILD)
+				break ;
+		}
+    }
+    return (status);
 }
 
 int	exec(t_node *node)
 {
-	int	status;
+    pid_t	last_pid;
+	int     status;
 	
-    if (open_redir_file(node->redirects) < 0)
+    if (open_redir_file(node) < 0)
 		return (ERROR_OPEN_REDIR);
-	do_redirect(node->redirects);
-	status = exec_cmd(node);
-	reset_redirect(node->redirects);
+	last_pid = exec_pipeline(node);
+	status = wait_pipeline(last_pid);
 	return (status);
 }
 
